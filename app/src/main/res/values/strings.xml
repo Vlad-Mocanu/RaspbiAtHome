@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">RaspbiAtHome</string>
+        <string-array name="ips_array">
+            <item>"192.168.0.43:5000"</item>
+            <item>"119.99.54.13:5000"</item>
+        </string-array>
+</resources>
