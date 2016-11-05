@@ -1,41 +1,35 @@
 
 package moccacino.raspbiathome;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Iterator;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ExpandableListView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.app.Activity;
 import android.view.View;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements Observer {
 
     EditText etResponse;
     TextView tvIsConnected;
     Button updateButton;
     Spinner spinner;
+
+    ExpandableListAdapter listAdapter;
+    ExpandableListView expListView;
+    List<String> listDataHeader;
+    HashMap<String, List<String>> listDataChild;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +42,7 @@ public class MainActivity extends Activity {
         updateButton = (Button) findViewById(R.id.updateButton);
         spinner = (Spinner) findViewById(R.id.spinner);
 
+
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.ips_array, android.R.layout.simple_spinner_item);
@@ -57,6 +52,19 @@ public class MainActivity extends Activity {
         spinner.setAdapter(adapter);
 
 
+        // get the listview
+        expListView = (ExpandableListView) findViewById(R.id.lvExp);
+        // preparing list data
+        listDataHeader = Arrays.asList(getResources().getStringArray(R.array.categories));
+        listDataChild = new HashMap<String, List<String>>();
+        List<String> emptyList = new ArrayList<String>();
+        emptyList.add("<This section is empty>");
+        for (int i = 0; i <= listDataHeader.size() - 1; i++)
+            listDataChild.put(listDataHeader.get(i), emptyList);
+
+        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild);
+        // setting list adapter
+        expListView.setAdapter(listAdapter);
 
         updateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -72,90 +80,45 @@ public class MainActivity extends Activity {
 
                 // call AsynTask to perform network operation on separate thread
                 String baseUrl = "http://" + spinner.getSelectedItem().toString() + "/";
-                new HttpAsyncTask().execute(baseUrl + "get_out_temp");
-                new HttpAsyncTask().execute(baseUrl + "get_in_temp");
-                new HttpAsyncTask().execute(baseUrl + "get_humidity");
-                new HttpAsyncTask().execute(baseUrl + "get_pressure");
-                new HttpAsyncTask().execute(baseUrl + "get_windows");
+                new HttpAsyncTask(MainActivity.this, "get_out_temp").execute(baseUrl);
+                new HttpAsyncTask(MainActivity.this, "get_in_temp").execute(baseUrl);
+                new HttpAsyncTask(MainActivity.this, "get_humidity").execute(baseUrl);
+                new HttpAsyncTask(MainActivity.this, "get_pressure").execute(baseUrl);
+                new HttpAsyncTask(MainActivity.this, "get_windows").execute(baseUrl);
             }
         });
 
     }
 
-    public static String GET(String url) {
-        InputStream inputStream = null;
-        String result = "";
-        try {
-
-            // create HttpClient
-            HttpClient httpclient = new DefaultHttpClient();
-
-            // make GET request to the given URL
-            HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
-
-            // receive response as inputStream
-            inputStream = httpResponse.getEntity().getContent();
-
-            // convert inputstream to string
-            if (inputStream != null)
-                result = convertInputStreamToString(inputStream);
-            else
-                result = "Did not work!";
-
-        } catch (Exception e) {
-            Log.d("InputStream", e.getLocalizedMessage());
-        }
-
-        return result;
-    }
-
-    private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        String line = "";
-        String result = "";
-        while ((line = bufferedReader.readLine()) != null)
-            result += line;
-
-        inputStream.close();
-        return result;
-    }
-
     public boolean isConnected() {
         ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected())
-            return true;
-        else
-            return false;
+        return networkInfo != null && networkInfo.isConnected();
     }
 
-    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... urls) {
-
-            return GET(urls[0]);
+    public void receiveUpdates(String title, ArrayList<String> updates) {
+        for (String s : updates) {
+            etResponse.append(s + "\n");
         }
 
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            Toast.makeText(getBaseContext(), "Received!", Toast.LENGTH_LONG).show();
-            try {
-                JSONArray jsonArray = new JSONArray(result);
-                for (int i = 0; i <= jsonArray.length() - 1; i++) {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+        List<String> childrenList = new ArrayList<String>();
+        for (String s : updates) {
+            childrenList.add(s);
+        }
 
-                    Iterator<String> keysIterator = jsonObject.keys();
-                    while (keysIterator.hasNext()) {
-                        String keyStr = keysIterator.next();
-                        etResponse.append(jsonObject.getString(keyStr) + "\n");
-                    }
-                    etResponse.append("\n");
-                }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+        switch (title) {
+            case "get_out_temp":
+                listDataChild.put(listDataHeader.get(0), childrenList);
+                break;
+            case "get_humidity":
+                listDataChild.put(listDataHeader.get(1), childrenList);
+                break;
+            case "get_pressure":
+                listDataChild.put(listDataHeader.get(2), childrenList);
+                break;
+            case "get_windows":
+                listDataChild.put(listDataHeader.get(3), childrenList);
+                break;
         }
     }
 
