@@ -18,7 +18,6 @@ import android.widget.TextView;
 import android.app.Activity;
 import android.view.View;
 
-
 public class MainActivity extends Activity implements Observer {
 
     EditText etResponse;
@@ -42,7 +41,6 @@ public class MainActivity extends Activity implements Observer {
         updateButton = (Button) findViewById(R.id.updateButton);
         spinner = (Spinner) findViewById(R.id.spinner);
 
-
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.ips_array, android.R.layout.simple_spinner_item);
@@ -57,10 +55,7 @@ public class MainActivity extends Activity implements Observer {
         // preparing list data
         listDataHeader = Arrays.asList(getResources().getStringArray(R.array.categories));
         listDataChild = new HashMap<String, List<String>>();
-        List<String> emptyList = new ArrayList<String>();
-        emptyList.add("<This section is empty>");
-        for (int i = 0; i <= listDataHeader.size() - 1; i++)
-            listDataChild.put(listDataHeader.get(i), emptyList);
+        initChildLists();
 
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild);
         // setting list adapter
@@ -71,12 +66,14 @@ public class MainActivity extends Activity implements Observer {
                 // Perform action on click
                 // check if you are connected or not
                 if (isConnected()) {
-                    tvIsConnected.setBackgroundColor(0xFF00CC00);
+                    tvIsConnected.setBackgroundColor(getResources().getColor(android.R.color.holo_green_dark));
                     tvIsConnected.setText("You are connected");
                     etResponse.setText("");
                 } else {
                     tvIsConnected.setText("You are NOT connected");
                 }
+
+                initChildLists();
 
                 // call AsynTask to perform network operation on separate thread
                 String baseUrl = "http://" + spinner.getSelectedItem().toString() + "/";
@@ -90,36 +87,49 @@ public class MainActivity extends Activity implements Observer {
 
     }
 
+    public void initChildLists() {
+
+        for (int i = 0; i <= listDataHeader.size() - 1; i++) {
+            List<String> emptyList = new ArrayList<String>();
+            listDataChild.put(listDataHeader.get(i), emptyList);
+        }
+    }
+
     public boolean isConnected() {
         ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Activity.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
     }
 
-    public void receiveUpdates(String title, ArrayList<String> updates) {
-        for (String s : updates) {
-            etResponse.append(s + "\n");
-        }
-
-        List<String> childrenList = new ArrayList<String>();
-        for (String s : updates) {
-            childrenList.add(s);
-        }
-
+    public void receiveUpdates(String title, HashMap<String, String> updates) {
+        List<String> listToAppend = null;
         switch (title) {
             case "get_out_temp":
-                listDataChild.put(listDataHeader.get(0), childrenList);
+                listToAppend = listDataChild.get(listDataHeader.get(0));
+                break;
+            case "get_in_temp":
+                listToAppend = listDataChild.get(listDataHeader.get(0));
                 break;
             case "get_humidity":
-                listDataChild.put(listDataHeader.get(1), childrenList);
+                listToAppend = listDataChild.get(listDataHeader.get(1));
                 break;
             case "get_pressure":
-                listDataChild.put(listDataHeader.get(2), childrenList);
+                listToAppend = listDataChild.get(listDataHeader.get(2));
                 break;
             case "get_windows":
-                listDataChild.put(listDataHeader.get(3), childrenList);
+                listToAppend = listDataChild.get(listDataHeader.get(3));
                 break;
+            default: etResponse.append("\nERROR: unable to handle rest call: " + title + "\n");
+                etResponse.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
+                return;
         }
+
+        for (HashMap.Entry<String, String> entry : updates.entrySet()) {
+            String pairString = entry.getKey() + ": " + entry.getValue();
+            listToAppend.add(pairString);
+            etResponse.append(pairString + "\n");
+        }
+        etResponse.append("\n");
     }
 
 }

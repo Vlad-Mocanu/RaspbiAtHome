@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by moccacino on 01.11.2016.
@@ -88,13 +90,15 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
                 JSONObject jsonObject = jsonArray.getJSONObject(i);
 
                 Iterator<String> keysIterator = jsonObject.keys();
-                ArrayList<String> results = new ArrayList();
+                List<String> results = new ArrayList();
+                HashMap<String, String> resultsHashMap = new HashMap<String, String>();
                 while (keysIterator.hasNext()) {
                     String keyStr = keysIterator.next();
                     results.add(jsonObject.getString(keyStr));
+                    resultsHashMap.put(keyStr, jsonObject.getString(keyStr));
                 }
 
-                observer.receiveUpdates(rest_call, results);
+                observer.receiveUpdates(rest_call, resultsHashMap);
             }
 
         } catch (JSONException e) {
