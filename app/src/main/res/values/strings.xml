@@ -3,13 +3,17 @@
     <string name="update">Update</string>
     <string name="is_connected">is connected?</string>
     <string-array name="ips_array">
-            <item>"192.168.0.43:5000"</item>
-            <item>"119.99.54.13:5000"</item>
-        </string-array>
+        <item>"192.168.0.43:5000"</item>
+        <item>"119.99.54.13:5000"</item>
+    </string-array>
     <string-array name="categories">
         <item>"Temperature"</item>
         <item>"Humidity"</item>
         <item>"Pressure"</item>
         <item>"Windows"</item>
     </string-array>
+    <string name="title_activity_settings">Settings</string>
+    <string name="settings">Settings</string>
+
+
 </resources>

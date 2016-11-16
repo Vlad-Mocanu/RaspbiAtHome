@@ -2,25 +2,24 @@ package moccacino.raspbiathome;
 
 import android.os.AsyncTask;
 import android.util.Log;
-import android.view.View;
-import android.widget.Toast;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Created by moccacino on 01.11.2016.
@@ -42,28 +41,25 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
         return GET(url[0] + rest_call);
     }
 
-    public static String GET(String url) {
-        InputStream inputStream = null;
+    public static String GET(String urlString) {
         String result = "";
         try {
 
-            // create HttpClient
-            HttpClient httpclient = new DefaultHttpClient();
-
-            // make GET request to the given URL
-            HttpResponse httpResponse = httpclient.execute(new HttpGet(url));
-
-            // receive response as inputStream
-            inputStream = httpResponse.getEntity().getContent();
-
-            // convert inputstream to string
-            if (inputStream != null)
-                result = convertInputStreamToString(inputStream);
-            else
-                result = "Did not work!";
+            URL url = new URL(urlString);
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            try {
+                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                if (in != null)
+                    result = convertInputStreamToString(in);
+                else
+                    result = "Did not work!";
+            } finally {
+                urlConnection.disconnect();
+            }
 
         } catch (Exception e) {
             Log.d("InputStream", e.getLocalizedMessage());
+            result = "Something went wrong!";
         }
 
         return result;
@@ -103,6 +99,9 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
 
         } catch (JSONException e) {
             e.printStackTrace();
+            HashMap<String, String> raw = new HashMap<String, String>();
+            raw.put(rest_call, result);
+            observer.receiveUpdates(rest_call, raw);
         }
     }
 }
