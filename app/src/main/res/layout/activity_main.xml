@@ -6,60 +6,47 @@
     android:orientation="vertical"
     android:weightSum="1">
 
+    <include layout="@layout/toolbar" />
+
     <TextView
         android:id="@+id/tvIsConnected"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical|center_horizontal"
-        android:background="@android:color/holo_red_dark"
-        android:textColor="#FFF"
-        android:textSize="18sp"
         android:layout_marginBottom="5dp"
-        android:text="@string/is_connected" />
+        android:background="@android:color/holo_red_dark"
+        android:text="@string/is_connected"
+        android:textColor="#FFF"
+        android:textSize="18sp" />
 
     <Spinner
+        android:id="@+id/spinner"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/spinner" />
+        android:layout_height="wrap_content" />
 
     <ExpandableListView
         android:id="@+id/lvExp"
         android:layout_width="match_parent"
         android:layout_height="188dp"
-        android:layout_weight="0.39"
+        android:layout_weight="0.74"
         tools:background="@android:color/background_light" />
 
     <EditText
         android:id="@+id/etResponse"
         android:layout_width="match_parent"
         android:layout_height="76dp"
-        android:ems="10"
         android:layout_marginTop="10dp"
-        android:inputType="textMultiLine"
-        android:textSize="12sp"
-        android:focusable="false"
-        android:focusableInTouchMode="false"
         android:layout_weight="0.59"
         android:background="@color/colorPrimaryDark"
-        android:textColor="@android:color/white">
+        android:ems="10"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:inputType="textMultiLine"
+        android:textColor="@android:color/white"
+        android:textSize="12sp">
 
         <requestFocus />
     </EditText>
 
-    <Button
-        android:text="@string/update"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/updateButton"
-        android:drawableRight="@android:drawable/ic_menu_rotate"
-        android:drawableEnd="@android:drawable/ic_menu_rotate" />
-
-    <Button
-        android:text="@string/settings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/settingsButton"
-        android:drawableRight="@android:drawable/ic_menu_preferences"
-        android:drawableEnd="@android:drawable/ic_menu_preferences" />
 
 </LinearLayout>

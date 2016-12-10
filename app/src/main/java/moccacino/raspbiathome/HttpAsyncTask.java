@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.net.ssl.HttpsURLConnection;
-
 /**
  * Created by moccacino on 01.11.2016.
  */
@@ -33,12 +31,6 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
     public HttpAsyncTask(Observer my_observer, String my_rest_call) {
         observer = my_observer;
         rest_call = my_rest_call;
-    }
-
-    @Override
-    protected String doInBackground(String[] url) {
-
-        return GET(url[0] + rest_call);
     }
 
     public static String GET(String urlString) {
@@ -74,6 +66,12 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
 
         inputStream.close();
         return result;
+    }
+
+    @Override
+    protected String doInBackground(String[] url) {
+
+        return GET(url[0] + rest_call);
     }
 
     // onPostExecute displays the results of the AsyncTask.

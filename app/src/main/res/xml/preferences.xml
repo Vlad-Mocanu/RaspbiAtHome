@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
     <SwitchPreference
+        android:defaultValue="true"
         android:key="pref_debug_switch"
-        android:title="Debug enable"
         android:summary="Control the visibility of the debug messages"
-        android:defaultValue="true" />
+        android:title="Debug enable" />
 </PreferenceScreen>

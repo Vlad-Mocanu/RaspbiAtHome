@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,8 +12,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.Spinner;
@@ -22,15 +24,15 @@ import android.widget.TextView;
 import android.app.Activity;
 import android.view.View;
 
-public class MainActivity extends Activity implements Observer {
+public class MainActivity extends AppCompatActivity implements Observer {
 
     private static final int RESULT_SETTINGS = 1;
 
     EditText etResponse;
     TextView tvIsConnected;
-    Button updateButton;
-    Button settingsButton;
     Spinner spinner;
+
+    MenuItem menuItem;
 
     ExpandableListAdapter listAdapter;
     ExpandableListView expListView;
@@ -56,14 +58,15 @@ public class MainActivity extends Activity implements Observer {
                 };
         sharedPref.registerOnSharedPreferenceChangeListener(listener);
 
+        Toolbar appToolbar = (Toolbar) findViewById(R.id.app_toolbar);
+        setSupportActionBar(appToolbar);
+
 
         // get reference to the views
         etResponse = (EditText) findViewById(R.id.etResponse);
         etResponse.setVisibility(debugSwitch ? View.VISIBLE : View.INVISIBLE);
 
         tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
-        updateButton = (Button) findViewById(R.id.updateButton);
-        settingsButton = (Button) findViewById(R.id.settingsButton);
         spinner = (Spinner) findViewById(R.id.spinner);
 
         // Create an ArrayAdapter using the string array and a default spinner layout
@@ -86,36 +89,54 @@ public class MainActivity extends Activity implements Observer {
         // setting list adapter
         expListView.setAdapter(listAdapter);
 
-        updateButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // Perform action on click
-                // check if you are connected or not
-                if (isConnected()) {
-                    tvIsConnected.setBackgroundColor(getResources().getColor(android.R.color.holo_green_dark));
-                    tvIsConnected.setText("You are connected");
-                    etResponse.setText("");
-                } else {
-                    tvIsConnected.setText("You are NOT connected");
-                }
+    }
 
-                initChildLists();
+    public void perform_updates() {
+        // check if you are connected or not
+        if (isConnected()) {
+            tvIsConnected.setBackgroundColor(getResources().getColor(android.R.color.holo_green_dark));
+            tvIsConnected.setText("You are connected");
+            etResponse.setText("");
+        } else {
+            tvIsConnected.setText("You are NOT connected");
+        }
 
-                // call AsynTask to perform network operation on separate thread
-                String baseUrl = "http://" + spinner.getSelectedItem().toString() + "/";
-                new HttpAsyncTask(MainActivity.this, "get_out_temp").execute(baseUrl);
-                new HttpAsyncTask(MainActivity.this, "get_in_temp").execute(baseUrl);
-                new HttpAsyncTask(MainActivity.this, "get_humidity").execute(baseUrl);
-                new HttpAsyncTask(MainActivity.this, "get_pressure").execute(baseUrl);
-                new HttpAsyncTask(MainActivity.this, "get_windows").execute(baseUrl);
-            }
-        });
+        initChildLists();
 
-        settingsButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
+        // call AsynTask to perform network operation on separate thread
+        String baseUrl = "http://" + spinner.getSelectedItem().toString() + "/";
+        new HttpAsyncTask(MainActivity.this, "get_out_temp").execute(baseUrl);
+        new HttpAsyncTask(MainActivity.this, "get_in_temp").execute(baseUrl);
+        new HttpAsyncTask(MainActivity.this, "get_humidity").execute(baseUrl);
+        new HttpAsyncTask(MainActivity.this, "get_pressure").execute(baseUrl);
+        new HttpAsyncTask(MainActivity.this, "get_windows").execute(baseUrl);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar_items, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivityForResult(intent, RESULT_SETTINGS);
-            }
-        });
+                break;
+            case R.id.action_refresh:
+                menuItem = item;
+                menuItem.setActionView(R.layout.progressbar);
+                menuItem.expandActionView();
+                perform_updates();
+                break;
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+        }
+        return true;
     }
 
     @Override
@@ -129,6 +150,7 @@ public class MainActivity extends Activity implements Observer {
                 break;
         }
     }
+
 
     public void initChildLists() {
 
@@ -146,6 +168,7 @@ public class MainActivity extends Activity implements Observer {
 
 
     public void receiveUpdates(String title, HashMap<String, String> updates) {
+        //populate lists based
         List<String> listToAppend = null;
         switch (title) {
             case "get_out_temp":
@@ -169,6 +192,7 @@ public class MainActivity extends Activity implements Observer {
                 return;
         }
 
+        //print debug information
         String toPrintString = "";
         for (HashMap.Entry<String, String> entry : updates.entrySet()) {
             String pairString = entry.getKey() + ": " + entry.getValue() + "\n";
@@ -179,6 +203,11 @@ public class MainActivity extends Activity implements Observer {
         etResponse.append("\n");
         //remove trailing \n
         listToAppend.add(toPrintString.substring(0, toPrintString.length() - 1));
+
+        //update progress bar
+        menuItem.collapseActionView();
+        menuItem.setActionView(null);
+
     }
 
 
