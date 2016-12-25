@@ -27,16 +27,15 @@
     <ExpandableListView
         android:id="@+id/lvExp"
         android:layout_width="match_parent"
-        android:layout_height="188dp"
-        android:layout_weight="0.74"
+        android:layout_height="match_parent"
         tools:background="@android:color/background_light" />
 
     <EditText
         android:id="@+id/etResponse"
         android:layout_width="match_parent"
-        android:layout_height="76dp"
+        android:layout_height="match_parent"
         android:layout_marginTop="10dp"
-        android:layout_weight="0.59"
+        android:layout_weight="0.47"
         android:background="@color/colorPrimaryDark"
         android:ems="10"
         android:focusable="false"
@@ -47,6 +46,5 @@
 
         <requestFocus />
     </EditText>
-
 
 </LinearLayout>

@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements Observer {
     ExpandableListAdapter listAdapter;
     ExpandableListView expListView;
     List<String> listDataHeader;
+    List<List<String>> listDataHeaderSummary;
     HashMap<String, List<String>> listDataChild;
 
     @Override
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements Observer {
 
         // get reference to the views
         etResponse = (EditText) findViewById(R.id.etResponse);
-        etResponse.setVisibility(debugSwitch ? View.VISIBLE : View.INVISIBLE);
+        etResponse.setVisibility(debugSwitch ? View.VISIBLE : View.GONE);
 
         tvIsConnected = (TextView) findViewById(R.id.tvIsConnected);
         spinner = (Spinner) findViewById(R.id.spinner);
@@ -80,12 +81,19 @@ public class MainActivity extends AppCompatActivity implements Observer {
 
         // get the listview
         expListView = (ExpandableListView) findViewById(R.id.lvExp);
+        expListView.setVisibility(debugSwitch ? View.GONE : View.VISIBLE);
         // preparing list data
         listDataHeader = Arrays.asList(getResources().getStringArray(R.array.categories));
+        listDataHeaderSummary = new ArrayList<List<String>>();
+        for (int i = 0; i <= listDataHeader.size() - 1; i++) {
+            listDataHeaderSummary.add(0, new ArrayList<String>());
+            listDataHeaderSummary.get(0).add("<no data>");
+        }
+
         listDataChild = new HashMap<String, List<String>>();
         initChildLists();
 
-        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild);
+        listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataHeaderSummary, listDataChild);
         // setting list adapter
         expListView.setAdapter(listAdapter);
 
@@ -105,6 +113,11 @@ public class MainActivity extends AppCompatActivity implements Observer {
 
         // call AsynTask to perform network operation on separate thread
         String baseUrl = "http://" + spinner.getSelectedItem().toString() + "/";
+
+        //clear the summary before performing REST calls
+        for (int i = 0; i <= listDataHeader.size() - 1; i++) {
+            listAdapter.setHeaderSummary(i, new ArrayList<String>(), false);
+        }
         new HttpAsyncTask(MainActivity.this, "get_out_temp").execute(baseUrl);
         new HttpAsyncTask(MainActivity.this, "get_in_temp").execute(baseUrl);
         new HttpAsyncTask(MainActivity.this, "get_humidity").execute(baseUrl);
@@ -146,7 +159,8 @@ public class MainActivity extends AppCompatActivity implements Observer {
         switch (requestCode) {
             case RESULT_SETTINGS:
                 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-                etResponse.setVisibility(sharedPref.getBoolean("pref_debug_switch", false) ? View.VISIBLE : View.INVISIBLE);
+                etResponse.setVisibility(sharedPref.getBoolean("pref_debug_switch", false) ? View.VISIBLE : View.GONE);
+                expListView.setVisibility(sharedPref.getBoolean("pref_debug_switch", false) ? View.GONE : View.VISIBLE);
                 break;
         }
     }
@@ -170,21 +184,23 @@ public class MainActivity extends AppCompatActivity implements Observer {
     public void receiveUpdates(String title, HashMap<String, String> updates) {
         //populate lists based
         List<String> listToAppend = null;
+        List<String> summaryToUpdate = new ArrayList<String>();
+        int indexListToUpdate = -1;
         switch (title) {
             case "get_out_temp":
-                listToAppend = listDataChild.get(listDataHeader.get(0));
+                indexListToUpdate = 0;
                 break;
             case "get_in_temp":
-                listToAppend = listDataChild.get(listDataHeader.get(0));
+                indexListToUpdate = 0;
                 break;
             case "get_humidity":
-                listToAppend = listDataChild.get(listDataHeader.get(1));
+                indexListToUpdate = 1;
                 break;
             case "get_pressure":
-                listToAppend = listDataChild.get(listDataHeader.get(2));
+                indexListToUpdate = 2;
                 break;
             case "get_windows":
-                listToAppend = listDataChild.get(listDataHeader.get(3));
+                indexListToUpdate = 3;
                 break;
             default:
                 etResponse.append("\nERROR: unable to handle rest call: " + title + "\n");
@@ -194,15 +210,33 @@ public class MainActivity extends AppCompatActivity implements Observer {
 
         //print debug information
         String toPrintString = "";
+
         for (HashMap.Entry<String, String> entry : updates.entrySet()) {
             String pairString = entry.getKey() + ": " + entry.getValue() + "\n";
             if (!entry.getKey().equals("id"))
                 toPrintString = toPrintString + pairString;
             etResponse.append(pairString);
+            if (indexListToUpdate >= 0) {
+                //update for floats and format to have 1 decimal
+                if (entry.getKey().equals("value")) {
+                    Float floatValue = Float.parseFloat(entry.getValue());
+                    String formatedValue = String.format("%.1f", floatValue);
+                    summaryToUpdate.add(" " + formatedValue);
+                    listAdapter.setHeaderSummary(indexListToUpdate, summaryToUpdate, true);
+                }
+                //update for windows and display label
+                if (entry.getKey().equals("state")) {
+                    String formatedValue = (entry.getValue() == "0") ? "Closed" : "Open";
+                    summaryToUpdate.add("  " + formatedValue);
+                    listAdapter.setHeaderSummary(indexListToUpdate, summaryToUpdate, true);
+                }
+            }
         }
         etResponse.append("\n");
         //remove trailing \n
+        listToAppend = listDataChild.get(listDataHeader.get(indexListToUpdate));
         listToAppend.add(toPrintString.substring(0, toPrintString.length() - 1));
+        listAdapter.notifyDataSetChanged();
 
         //update progress bar
         menuItem.collapseActionView();
