@@ -7,5 +7,5 @@ import java.util.HashMap;
  */
 
 interface Observer {
-    void receiveUpdates(String title, HashMap<String, String> results);
+    void receiveUpdates(String title, HashMap<String, String> results, Boolean has_error);
 }

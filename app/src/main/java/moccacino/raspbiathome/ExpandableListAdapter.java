@@ -46,6 +46,10 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
             this._listDataHeaderSummary.set(position, mySummaryString);
     }
 
+    public String getHeaderSummary(int position) {
+        return this._listDataHeaderSummary.get(position);
+    }
+
     @Override
     public Object getChild(int groupPosition, int childPosititon) {
         return this._listDataChild.get(this._listDataHeader.get(groupPosition))

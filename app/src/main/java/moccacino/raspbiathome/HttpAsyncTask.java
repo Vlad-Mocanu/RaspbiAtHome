@@ -27,7 +27,6 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
 
     Observer observer;
     String rest_call;
-
     public HttpAsyncTask(Observer my_observer, String my_rest_call) {
         observer = my_observer;
         rest_call = my_rest_call;
@@ -39,6 +38,10 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
 
             URL url = new URL(urlString);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
+            urlConnection.setConnectTimeout(5000);
+            urlConnection.setReadTimeout(5000);
+
             try {
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
                 if (in != null)
@@ -92,14 +95,18 @@ class HttpAsyncTask extends AsyncTask<String, Void, String> {
                     resultsHashMap.put(keyStr, jsonObject.getString(keyStr));
                 }
 
-                observer.receiveUpdates(rest_call, resultsHashMap);
+                observer.receiveUpdates(rest_call, resultsHashMap, false);
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
             HashMap<String, String> raw = new HashMap<String, String>();
             raw.put(rest_call, result);
-            observer.receiveUpdates(rest_call, raw);
+            observer.receiveUpdates(rest_call, raw, true);
         }
+    }
+
+    public enum Status {
+        ERROR_TIMEOUT, ERROR_JSON, NO_ERROR
     }
 }

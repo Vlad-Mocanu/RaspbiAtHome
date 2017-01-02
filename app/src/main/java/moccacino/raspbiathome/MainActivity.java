@@ -96,7 +96,29 @@ public class MainActivity extends AppCompatActivity implements Observer {
         listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataHeaderSummary, listDataChild);
         // setting list adapter
         expListView.setAdapter(listAdapter);
+    }
 
+    @Override
+    public void onPause() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        for (int i = 0; i <= listDataHeaderSummary.size() - 1; i++) {
+            editor.putString("SUMMARY_" + String.valueOf(i), listAdapter.getHeaderSummary(i));
+            editor.commit();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        for (int i = 0; i <= listDataHeaderSummary.size() - 1; i++) {
+            String savedState = sharedPref.getString("SUMMARY_" + String.valueOf(i), "");
+            List tempHeaderSummary = new ArrayList<String>();
+            tempHeaderSummary.add(savedState);
+            listAdapter.setHeaderSummary(i, tempHeaderSummary, false);
+        }
     }
 
     public void perform_updates() {
@@ -181,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements Observer {
     }
 
 
-    public void receiveUpdates(String title, HashMap<String, String> updates) {
+    public void receiveUpdates(String title, HashMap<String, String> updates, Boolean has_error) {
         //populate lists based
         List<String> listToAppend = null;
         List<String> summaryToUpdate = new ArrayList<String>();
